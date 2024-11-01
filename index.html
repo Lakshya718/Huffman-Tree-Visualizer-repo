@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Huffman Tree</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            text-align: center;
+        }
+
+        .container {
+            width: 80%;
+            margin: auto;
+            margin-top: 20px;
+        }
+
+        .input-section {
+            margin-bottom: 20px;
+        }
+
+        #node-list {
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        #huffman-tree {
+            border: 1px solid #ccc;
+            height: 500px;
+            width: 100%;
+            background-color: #fff;
+            padding: 10px;
+        }
+
+        #code-list {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Huffman Tree Visualization</h1>
+        <div class="input-section">
+            <input type="text" id="char" placeholder="Character">
+            <input type="number" id="freq" placeholder="Frequency">
+            <button onclick="addNode()">Add Node</button>
+            <button onclick="buildHuffmanTree()">Build Huffman Tree</button>
+        </div>
+        <div id="node-list"></div>
+        <div id="huffman-tree">
+            <h3>Huffman Tree</h3>
+        </div>
+        <div id="code-list">
+            <h3>Huffman Codes:</h3>
+        </div>
+    </div>
+
+    <script>
+        let nodes = [];
+
+        // Function to add a new node to the list
+        function addNode() {
+            const char = document.getElementById('char').value;
+            const freq = parseInt(document.getElementById('freq').value, 10);
+
+            if (!char || isNaN(freq) || freq <= 0) {
+                alert('Please enter a valid character and frequency.');
+                return;
+            }
+
+            nodes.push({ char, freq });
+            updateNodeList();
+            document.getElementById('char').value = '';
+            document.getElementById('freq').value = '';
+        }
+
+        // Function to update the displayed list of nodes
+        function updateNodeList() {
+            const nodeList = document.getElementById('node-list');
+            nodeList.innerHTML = '<h3>Nodes:</h3>';
+            nodes.forEach(node => {
+                nodeList.innerHTML += `<div>${node.char}: ${node.freq}</div>`;
+            });
+        }
+
+        // Huffman Node class
+        class HuffmanNode {
+            constructor(char, freq, left = null, right = null) {
+                this.char = char;
+                this.freq = freq;
+                this.left = left;
+                this.right = right;
+            }
+        }
+
+        // Function to build the Huffman Tree
+        function buildHuffmanTree() {
+            if (nodes.length === 0) {
+                alert('Please add some nodes first.');
+                return;
+            }
+
+            const heap = nodes.map(node => new HuffmanNode(node.char, node.freq));
+            heap.sort((a, b) => a.freq - b.freq);
+
+            while (heap.length > 1) {
+                const left = heap.shift();
+                const right = heap.shift();
+                const merged = new HuffmanNode(null, left.freq + right.freq, left, right);
+                heap.push(merged);
+                heap.sort((a, b) => a.freq - b.freq);
+            }
+
+            const root = heap[0];
+            visualizeHuffmanTree(root);
+            displayHuffmanCodes(root);
+        }
+
+        // Function to generate Huffman codes
+        function generateHuffmanCodes(node, code = '', codes = {}) {
+            if (node.left === null && node.right === null) {
+                codes[node.char] = code;
+            } else {
+                if (node.left) generateHuffmanCodes(node.left, code + '0', codes);
+                if (node.right) generateHuffmanCodes(node.right, code + '1', codes);
+            }
+            return codes;
+        }
+
+        // Function to visualize the Huffman Tree using D3.js
+        function visualizeHuffmanTree(root) {
+            // Clear any existing tree
+            d3.select('#huffman-tree').selectAll("svg").remove();
+
+            const svg = d3.select('#huffman-tree').append('svg')
+                .attr('width', '100%')
+                .attr('height', '500px')
+                .append('g')
+                .attr('transform', 'translate(50, 50)');
+
+            const treeLayout = d3.tree().size([800, 400]);
+            const rootD3 = d3.hierarchy(root, d => d.left && d.right ? [d.left, d.right] : []);
+            treeLayout(rootD3);
+
+            const links = svg.selectAll('.link')
+                .data(rootD3.links())
+                .enter().append('line')
+                .attr('class', 'link')
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y)
+                .style('stroke', '#ccc');
+
+            const nodes = svg.selectAll('.node')
+                .data(rootD3.descendants())
+                .enter().append('g')
+                .attr('class', 'node')
+                .attr('transform', d => `translate(${d.x}, ${d.y})`);
+
+            nodes.append('circle')
+                .attr('r', 20)
+                .style('fill', '#fff')
+                .style('stroke', 'steelblue');
+
+            nodes.append('text')
+                .attr('dy', 4)
+                .attr('text-anchor', 'middle')
+                .text(d => d.data.char ? `${d.data.char}:${d.data.freq}` : `${d.data.freq}`);
+        }
+
+        // Function to display Huffman codes in the designated div
+        function displayHuffmanCodes(root) {
+            const codes = generateHuffmanCodes(root);
+            const codeList = document.getElementById('code-list');
+            codeList.innerHTML = '<h3>Huffman Codes:</h3>';
+            for (const [char, code] of Object.entries(codes)) {
+                codeList.innerHTML += `<div>${char}: ${code}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
+
