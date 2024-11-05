@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,22 +11,18 @@
             background-color: #f0f0f0;
             text-align: center;
         }
-
         .container {
             width: 80%;
             margin: auto;
             margin-top: 20px;
         }
-
         .input-section {
             margin-bottom: 20px;
         }
-
         #node-list {
             margin-top: 10px;
             margin-bottom: 20px;
         }
-
         #huffman-tree {
             border: 1px solid #ccc;
             height: 500px;
@@ -35,7 +30,6 @@
             background-color: #fff;
             padding: 10px;
         }
-
         #code-list {
             margin-top: 20px;
         }
@@ -45,10 +39,16 @@
     <div class="container">
         <h1>Huffman Tree Visualization</h1>
         <div class="input-section">
+            <!-- String Input with Enter Key Listener -->
+            <input type="text" id="inputString" placeholder="Enter a string" onkeydown="if(event.key === 'Enter') processString()">
+            <button onclick="processString()">Generate from String</button>
+            <br><br>
+            <!-- Character and Frequency Input with Enter Key Listener on Frequency -->
             <input type="text" id="char" placeholder="Character">
-            <input type="number" id="freq" placeholder="Frequency">
+            <input type="number" id="freq" placeholder="Frequency" onkeydown="if(event.key === 'Enter') addNode()">
             <button onclick="addNode()">Add Node</button>
             <button onclick="buildHuffmanTree()">Build Huffman Tree</button>
+            <button onclick="clearPage()">Clear Page</button>
         </div>
         <div id="node-list"></div>
         <div id="huffman-tree">
@@ -62,21 +62,31 @@
     <script>
         let nodes = [];
 
-        // Function to add a new node to the list
+        // Function to add a new node to the list manually
         function addNode() {
-            const char = document.getElementById('char').value;
-            const freq = parseInt(document.getElementById('freq').value, 10);
+    const char = document.getElementById('char').value;
+    const freq = parseInt(document.getElementById('freq').value, 10);
 
-            if (!char || isNaN(freq) || freq <= 0) {
-                alert('Please enter a valid character and frequency.');
-                return;
-            }
+    if (!char || char.length !== 1 || isNaN(freq) || freq <= 0) {
+        alert('Please enter a valid single character and frequency.');
+        return;
+    }
 
-            nodes.push({ char, freq });
-            updateNodeList();
-            document.getElementById('char').value = '';
-            document.getElementById('freq').value = '';
-        }
+    // Check for existing character
+    const existingNode = nodes.find(node => node.char === char);
+    if (existingNode) {
+        // If the character exists, update its frequency
+        existingNode.freq += freq;
+    } else {
+        // Otherwise, add a new node
+        nodes.push({ char, freq });
+    }
+
+    updateNodeList();
+    document.getElementById('char').value = '';
+    document.getElementById('freq').value = '';
+}
+
 
         // Function to update the displayed list of nodes
         function updateNodeList() {
@@ -85,6 +95,31 @@
             nodes.forEach(node => {
                 nodeList.innerHTML += `<div>${node.char}: ${node.freq}</div>`;
             });
+        }
+
+        // Function to process a string input and calculate character frequencies, ignoring spaces
+        function processString() {
+            const inputString = document.getElementById('inputString').value;
+            if (!inputString) {
+                alert('Please enter a string.');
+                return;
+            }
+
+            // Clear existing nodes and calculate frequencies, ignoring spaces
+            nodes = [];
+            const frequencyMap = {};
+            for (const char of inputString) {
+                if (char === ' ') continue; // Skip spaces
+                frequencyMap[char] = (frequencyMap[char] || 0) + 1;
+            }
+
+            // Add each character and its frequency to nodes
+            for (const [char, freq] of Object.entries(frequencyMap)) {
+                nodes.push({ char, freq });
+            }
+
+            updateNodeList();
+            buildHuffmanTree();
         }
 
         // Huffman Node class
@@ -182,7 +217,19 @@
                 codeList.innerHTML += `<div>${char}: ${code}</div>`;
             }
         }
+
+        // Function to clear the page and reset everything to the initial state
+        function clearPage() {
+            nodes = [];  // Clear the nodes array
+            document.getElementById('inputString').value = '';
+            document.getElementById('char').value = '';
+            document.getElementById('freq').value = '';
+            document.getElementById('node-list').innerHTML = '';
+            document.getElementById('code-list').innerHTML = '<h3>Huffman Codes:</h3>';
+            
+            // Clear the Huffman Tree SVG
+            d3.select('#huffman-tree').selectAll("svg").remove();
+        }
     </script>
 </body>
 </html>
-
